@@ -1,69 +1,67 @@
-# Build an image that can do training and inference in SageMaker
-# This is a Python 3 image that uses the nginx, gunicorn, flask stack
-# for serving inferences in a stable way.
+FROM ubuntu:22.04
 
-FROM ubuntu:20.04
-ARG DEBIAN_FRONTEND=noninteractive
+# Set a docker label to advertise multi-model support on the container
+LABEL com.amazonaws.sagemaker.capabilities.multi-models=true
+# Set a docker label to enable container to use SAGEMAKER_BIND_TO_PORT environment variable if present
+LABEL com.amazonaws.sagemaker.capabilities.accept-bind-to-port=true
 
 RUN apt -y update && apt -y upgrade && \
-    apt-get -y install curl && \
-    curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
-    apt install nodejs -y && \
-    npm install -g @bazel/bazelisk
+apt-get -y install curl && apt-get -y install wget && \
+wget https://deb.nodesource.com/setup_18.x | bash - && \
+apt install nodejs -y && apt install npm -y && \
+npm install -g @bazel/bazelisk
+    
+# Install necessary dependencies for MMS and SageMaker Inference Toolkit
 
 RUN apt-get update && \
     apt-get -y install --no-install-recommends \
     build-essential \
+    git \
     ca-certificates \
     openjdk-8-jdk-headless \
-    python3-dev \
+    python3 \
     python3-pip \
+    python3-setuptools \
     nginx \
     ca-certificates \
     curl \
     wget \
     vim \
-    gcc \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* 
 
+RUN python3 -V
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+RUN update-alternatives --install /usr/local/bin/pip pip /usr/local/bin/pip3 1
 
 RUN pip3 install --upgrade pip
-#RUN pip3 install --upgrade Pillow>=9.0.0
-# Here we get all python packages.
-RUN pip3 install wheel
 
-
-RUN pip3 --no-cache-dir install numpy \
-                                pandas \
-                                flask gevent gunicorn \
-                                mxnet \
+# Install MXNet, MMS, and SageMaker Inference Toolkit to set up MMS
+RUN pip3 --no-cache-dir install mxnet \
                                 multi-model-server \
+                                sagemaker-inference \
                                 retrying
 
-COPY requirements.txt /usr/local/bin/requirements.txt
+ADD . /usr/local/bin/
+
+RUN ls /usr/local/bin/
+
+#COPY requirements.txt /usr/local/bin/requirements.txt
 
 RUN pip3 install -r /usr/local/bin/requirements.txt
-#RUN pip install -r requirements.txt
-#ADD requirements.txt /opt/program/requirements.txt
-#RUN pip3 install -r /opt/program/requirements.txt && rm /opt/program/requirements.txt
-#RUN pip install Pillow
 
-# Set some environment variables. PYTHONUNBUFFERED keeps Python from buffering our standard
-# output stream, which means that logs can be delivered to the user quickly. PYTHONDONTWRITEBYTECODE
-# keeps Python from writing the .pyc files which are unnecessary in this case. We also update
-# PATH so that the train and serve programs are found when the container is invoked.
+# Copy entrypoint script to the image
+COPY dockerd-entrypoint.py /usr/local/bin/dockerd-entrypoint.py
+RUN chmod +x /usr/local/bin/dockerd-entrypoint.py
 
-ENV PYTHONUNBUFFERED=TRUE
-ENV PYTHONDONTWRITEBYTECODE=TRUE
-ENV PATH="/opt/program:${PATH}"
+RUN mkdir -p /home/model-server/
 
-ADD . /opt/program/
+# Copy the default custom service file to handle incoming data and inference requests
+COPY model_handler.py /home/model-server/model_handler.py
 
-RUN ls /opt/program/
+COPY transformscript.py /home/model-server/transformscript.py
 
-RUN chmod +x /opt/program/train
+# Define an entrypoint script for the docker image
+ENTRYPOINT ["python", "/usr/local/bin/dockerd-entrypoint.py"]
 
-RUN chmod +x /opt/program/serve
-
-WORKDIR /opt/program
+# Define command to be passed to the entrypoint
+CMD ["serve"]

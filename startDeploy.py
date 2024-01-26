@@ -138,9 +138,10 @@ class Deploy(object):
         self.huggingface_model_quantize = huggingface_model_quantize
 
         # ------ load cost types dict ---------
-        costpath = pkg_resources.resource_filename("ezsmdeploy", "data/cost.csv")
+        #costpath = pkg_resources.resource_filename(resource_name="data/cost.csv")
+        costpath = "data/cost.csv"
         self.costdict = {}
-        with open(costpath, mode="r") as infile:
+        with open("data/cost.csv", mode="r") as infile:
             reader = csv.reader(infile)
             for rows in reader:
                 # cost for each instance
@@ -509,9 +510,10 @@ class Deploy(object):
 
         if self.instance_type == None:
             # ------ load instance types dict ---------
-            instancetypepath = pkg_resources.resource_filename(
-                "ezsmdeploy", "data/instancetypes.csv"
-            )
+            #instancetypepath = pkg_resources.resource_filename(
+            #    "ezsmdeploy", "data/instancetypes.csv"
+            #)
+            instancetypepath = "data/instancetypes.csv"
             with open(instancetypepath, mode="r") as infile:
                 reader = csv.reader(infile)
                 for rows in reader:  # memGb / vcpu, cost, cost/memGb-per-vcpu
@@ -561,9 +563,10 @@ class Deploy(object):
 
         size = self.get_size(self.bucket, tmppath)
 
-        self.instancetypespath = pkg_resources.resource_filename(
-            "ezsmdeploy", "data/instancetypes.csv"
-        )
+        self.instancetypespath = "data/instancetypes.csv"
+        #pkg_resources.resource_filename(
+        #    "ezsmdeploy", "data/instancetypes.csv"
+        #)
 
         # Assume you need at least 4 workers, each model is deployed redundantly to every vcpu.
         # So we base this decision on memory available per vcpu. If model is being downloaded from a hub
@@ -627,11 +630,13 @@ class Deploy(object):
             )
 
         else:
+            role = 'arn:aws:iam::419270912185:role/personaltrainersagemaker'
+            #agemaker.get_execution_role()
             self.sagemakermodel = MultiDataModel(
                 name="model-" + self.name,
                 model_data_prefix="/".join(self.modelpath[0].split("/")[:-1]) + "/",
                 image_uri=self.image,
-                role=sagemaker.get_execution_role(),
+                role=role,
                 dependencies=self.dependencies,
                 # sagemaker_session=self.session,
                 predictor_cls=sagemaker.predictor.Predictor,
@@ -927,7 +932,8 @@ class Deploy(object):
             )
 
         if self.deployed:
-            path1 = pkg_resources.resource_filename("ezsmdeploy", "data/smlocust.py")
+            #path1 = pkg_resources.resource_filename("ezsmdeploy", "data/smlocust.py")
+            path1 = "data/smlocust.py"
             shutil.copy(path1, "src/smlocust.py")
 
             start = datetime.datetime.now()
@@ -1040,7 +1046,7 @@ class Deploy(object):
                 sp.hide()
                 sp.write(str(datetime.datetime.now() - start) + " | added source file")
                 sp.show()
-                
+
                 if len(self.dependencies)>1:
                     for dep in self.dependencies:
                         shutil.copytree(dep, "src/")
@@ -1050,13 +1056,16 @@ class Deploy(object):
 
                 # ------ Dockerfile checks -------
                 if self.dockerfilepath == None and self.multimodel == True:
-                    self.dockerfilepath = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/Dockerfile"
-                    )
+                    #self.dockerfilepath = pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/Dockerfile"
+                    #)
+                    self.dockerfilepath =  "data/Dockerfile"
+
                 elif self.dockerfilepath == None and self.multimodel == False:
-                    self.dockerfilepath = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/Dockerfile_flask"
-                    )
+                    #self.dockerfilepath = pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/Dockerfile_flask"
+                    #)
+                    self.dockerfilepath =  "data/Dockerfile_flask"
 
                 # move Dockerfile to src
                 shutil.copy(self.dockerfilepath, "src/Dockerfile")
@@ -1068,15 +1077,18 @@ class Deploy(object):
 
                 if self.multimodel:
                     # Use multi model
-                    path1 = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/model_handler.py"
-                    )
-                    path2 = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/dockerd-entrypoint.py"
-                    )
-                    path3 = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/build-docker.sh"
-                    )
+                    path1 = "data/model_handler.py"
+                    #pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/model_handler.py"
+                    #)
+                    path2 = "data/dockerd-entrypoint.py"
+                    #pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/dockerd-entrypoint.py"
+                    #)
+                    path3 = "data/build-docker.sh"
+                    #pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/build-docker.sh"
+                    #)
 
                     shutil.copy(path1, "src/model_handler.py")
                     shutil.copy(path2, "src/dockerd-entrypoint.py")
@@ -1086,20 +1098,27 @@ class Deploy(object):
 
                 else:
                     # Use Flask stack
-                    path1 = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/nginx.conf"
-                    )
-                    path2 = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/predictor.py"
-                    )
-                    path3 = pkg_resources.resource_filename("ezsmdeploy", "data/serve")
-                    path4 = pkg_resources.resource_filename("ezsmdeploy", "data/train")
-                    path5 = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/wsgi.py"
-                    )
-                    path6 = pkg_resources.resource_filename(
-                        "ezsmdeploy", "data/build-docker.sh"
-                    )
+                    #path1 = pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/nginx.conf"
+                    #)
+                    #path2 = pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/predictor.py"
+                    #)
+                    #path3 = pkg_resources.resource_filename("ezsmdeploy", "data/serve")
+                    #path4 = pkg_resources.resource_filename("ezsmdeploy", "data/train")
+                    #path5 = pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/wsgi.py"
+                    #)
+                    #path6 = pkg_resources.resource_filename(
+                    #    "ezsmdeploy", "data/build-docker.sh"
+                    #)
+
+                    path1 = "src/nginx.conf"
+                    path2 = "src/predictor.py"
+                    path3 = "src/serve"
+                    path4 = "src/train"
+                    path5 = "src/wsgi.py"
+                    path6 = "src/build-docker.sh"
 
                     shutil.copy(path1, "src/nginx.conf")
                     shutil.copy(path2, "src/predictor.py")
@@ -1200,7 +1219,7 @@ class Deploy(object):
                 sp.write(
                     str(datetime.datetime.now() - start)
                     + " | model monitor data capture location is "
-                    + "s3://{}/ezsmdeploy/model-{}/datacapture".format(
+                    + "s3://{}/personalassistsagemaker/model-{}/datacapture".format(
                         self.bucket, self.name
                     )
                 )

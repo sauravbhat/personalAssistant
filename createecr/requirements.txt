@@ -1,0 +1,8 @@
+numpy==1.19.5
+joblib>=1.2.0
+scikit-learn==0.24.2
+#Pillow==9.0.1
+sagemaker-inference>=1.10.0
+#minimist>=1.2.6
+#execa>=0.8.0
+wheel>=0.37.0
