@@ -10,7 +10,7 @@ apt-get -y install curl && apt-get -y install wget && \
 wget https://deb.nodesource.com/setup_18.x | bash - && \
 apt install nodejs -y && apt install npm -y && \
 npm install -g @bazel/bazelisk
-    
+
 # Install necessary dependencies for MMS and SageMaker Inference Toolkit
 
 RUN apt-get update && \
@@ -19,7 +19,7 @@ RUN apt-get update && \
     git \
     ca-certificates \
     openjdk-8-jdk-headless \
-    python3 \
+    python3-dev \
     python3-pip \
     python3-setuptools \
     nginx \
@@ -27,16 +27,22 @@ RUN apt-get update && \
     curl \
     wget \
     vim \
-    && rm -rf /var/lib/apt/lists/* 
+    && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -V
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
-RUN update-alternatives --install /usr/local/bin/pip pip /usr/local/bin/pip3 1
+#RUN update-alternatives --install /usr/local/bin/pip pip /usr/local/bin/pip3 1
 
 RUN pip3 install --upgrade pip
 
+RUN pip3 install wheel
+
+#sudo apt-get install python-dev   # for python2.x installs
+#sudo apt-get install gcc python3-dev  # for python3.x installs
+
+
 # Install MXNet, MMS, and SageMaker Inference Toolkit to set up MMS
-RUN pip3 --no-cache-dir install mxnet \
+RUN pip3 --no-cache-dir install numpy pandas mxnet scikit-learn\
                                 multi-model-server \
                                 sagemaker-inference \
                                 retrying
@@ -45,7 +51,7 @@ ADD . /usr/local/bin/
 
 RUN ls /usr/local/bin/
 
-#COPY requirements.txt /usr/local/bin/requirements.txt
+COPY requirements.txt /usr/local/bin/requirements.txt
 
 RUN pip3 install -r /usr/local/bin/requirements.txt
 

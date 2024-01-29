@@ -729,6 +729,16 @@ class Deploy(object):
                 )
 
         else:
+            print(self.instance_count)
+            print(self.instance_type)
+            print(self.ei)
+            print("ezsm-endpoint-" + self.name)
+            print(self.wait)
+            print(volume_size)
+            print(data_capture_config)
+            print(self.serverless_config)
+            print(self.async_config)
+
             self.predictor = self.sagemakermodel.deploy(
                 initial_instance_count=self.instance_count,
                 instance_type=self.instance_type,
@@ -738,7 +748,7 @@ class Deploy(object):
                 volume_size=volume_size,
                 data_capture_config=data_capture_config,
                 serverless_inference_config=self.serverless_config,
-                container_startup_health_check_timeout=1200,
+                container_startup_health_check_timeout=300,
                 async_inference_config=self.async_config,
             )
 
