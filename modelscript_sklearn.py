@@ -6,7 +6,8 @@ import os
 #Return loaded model
 def load_model(modelpath):
     print(modelpath)
-    clf = load(os.path.join(modelpath,'model.joblib'))
+    #clf = load(os.path.join(modelpath,'model.joblib'))
+    clf = load(os.path.join(modelpath,'model1.tar.gz'))
     print("loaded")
     return clf
 
@@ -17,10 +18,10 @@ def predict(model, payload):
         print(np.frombuffer(payload))
         print(np.frombuffer(payload).reshape((1,64)))
         print( model.predict(np.frombuffer(payload).reshape((1,64))) )
-        
+
         out = model.predict(np.frombuffer(payload).reshape((1,64)))
-        
+
     except Exception as e:
         out = [type(payload),str(e)] #useful for debugging!
-    
+
     return out

@@ -250,6 +250,7 @@ class Deploy(object):
         # ------- name checks --------
         if name == None:
             self.name = shortuuid.uuid().lower()
+            print(self.name)
         elif type(name) == str:
             self.name = name
             if name.islower() == False:
