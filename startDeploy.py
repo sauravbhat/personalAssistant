@@ -558,9 +558,9 @@ class Deploy(object):
         # TO DO : add heuristic for auto selection of instance size
 
         if self.prefix == "":
-            tmppath = "ezsmdeploy/model-" + self.name + "/"
+            tmppath = "deploy/model-" + self.name + "/"
         else:
-            tmppath = self.prefix + "/ezsmdeploy/model-" + self.name + "/"
+            tmppath = self.prefix + "/deploy/model-" + self.name + "/"
 
         size = self.get_size(self.bucket, tmppath)
 
@@ -631,7 +631,7 @@ class Deploy(object):
             )
 
         else:
-            role = 'arn:aws:iam::419270912185:role/personaltrainersagemaker'
+            role = 'arn:aws:iam::xxxx:role/xxxxxxx'
             #agemaker.get_execution_role()
             self.sagemakermodel = MultiDataModel(
                 name="model-" + self.name,
@@ -653,11 +653,11 @@ class Deploy(object):
             from sagemaker.model_monitor import DataCaptureConfig
 
             if self.prefix == "":
-                tmps3uri = "s3://{}/ezsmdeploy/model-{}/datacapture".format(
+                tmps3uri = "s3://{}/deploy/model-{}/datacapture".format(
                     self.bucket, self.name
                 )
             else:
-                tmps3uri = "s3://{}/{}/ezsmdeploy/model-{}/datacapture".format(
+                tmps3uri = "s3://{}/{}/deploy/model-{}/datacapture".format(
                     self.bucket, self.prefix, self.name
                 )
 
@@ -695,7 +695,7 @@ class Deploy(object):
                 initial_instance_count=self.instance_count,
                 instance_type=self.instance_type,
                 # predictor_cls=sagemaker.predictor.Predictor, # Have to remove this since the new JumpstartModel SDK fails
-                endpoint_name="ezsm-foundation-endpoint-" + self.name,
+                endpoint_name="foundation-endpoint-" + self.name,
                 volume_size=volume_size,
                 # serverless_inference_config=self.serverless_config, #ignoring serverless inference
                 wait=self.wait,
@@ -704,7 +704,7 @@ class Deploy(object):
             self.predictor = self.sagemakermodel.deploy(
                 initial_instance_count=self.instance_count,
                 instance_type=self.instance_type,
-                endpoint_name="ezsm-hf-endpoint-" + self.name,
+                endpoint_name="hf-endpoint-" + self.name,
                 volume_size=volume_size,
                 wait=self.wait,
                 container_startup_health_check_timeout=self.wait_time,
@@ -715,7 +715,7 @@ class Deploy(object):
                 self.predictor = self.sagemakermodel_serverless.deploy(
                     initial_instance_count=self.instance_count,
                     instance_type=self.instance_type,
-                    endpoint_name="ezsm-serv-hf-endpoint-" + self.name,
+                    endpoint_name="serv-hf-endpoint-" + self.name,
                     volume_size=volume_size,
                     serverless_inference_config=self.serverless_config,
                     wait=self.wait,
@@ -724,7 +724,7 @@ class Deploy(object):
                 self.predictor = self.sagemakermodel.deploy(
                     initial_instance_count=self.instance_count,
                     instance_type=self.instance_type,
-                    endpoint_name="ezsm-djl-hf-endpoint-" + self.name,
+                    endpoint_name="djl-hf-endpoint-" + self.name,
                     volume_size=volume_size,
                     wait=self.wait,
                 )
@@ -733,7 +733,7 @@ class Deploy(object):
             print(self.instance_count)
             print(self.instance_type)
             print(self.ei)
-            print("ezsm-endpoint-" + self.name)
+            print("endpoint-" + self.name)
             print(self.wait)
             print(volume_size)
             print(data_capture_config)
@@ -744,7 +744,7 @@ class Deploy(object):
                 initial_instance_count=self.instance_count,
                 instance_type=self.instance_type,
                 accelerator_type=self.ei,
-                endpoint_name="ezsm-endpoint-" + self.name,
+                endpoint_name="endpoint-" + self.name,
                 wait=self.wait,
                 volume_size=volume_size,
                 data_capture_config=data_capture_config,
@@ -768,9 +768,9 @@ class Deploy(object):
     def upload_model(self):
         i = 1
         if self.prefix == "":
-            tmppath = "ezsmdeploy/model-"
+            tmppath = "deploy/model-"
         else:
-            tmppath = self.prefix + "/ezsmdeploy/model-"
+            tmppath = self.prefix + "/deploy/model-"
         self.modelpath = []
         for name in self.model:
             self.modelpath.append(
@@ -883,7 +883,7 @@ class Deploy(object):
             .split("\n")[0]
         )
         region = os.popen("aws configure get region").read().split("\n")[0]
-        self.image = "{}.dkr.ecr.{}.amazonaws.com/ezsmdeploy-image-{}".format(
+        self.image = "{}.dkr.ecr.{}.amazonaws.com/deploy-image-{}".format(
             acct, region, self.name
         )
 
@@ -1230,7 +1230,7 @@ class Deploy(object):
                 sp.write(
                     str(datetime.datetime.now() - start)
                     + " | model monitor data capture location is "
-                    + "s3://{}/personalassistsagemaker/model-{}/datacapture".format(
+                    + "s3://{}/xxxxx/model-{}/datacapture".format(
                         self.bucket, self.name
                     )
                 )
