@@ -2,7 +2,7 @@ import startDeploy
 import os
 
 
-startDeploy.Deploy(model = ['s3://personalassistantml/22-01-2024-12-03-54.tar.gz'],
+startDeploy.Deploy(model = ['s3://personalassistantml/test-model.tar.gz'],
                     serverless=True,
                     script="modelscript_sklearn.py",
                     bucket="personalassistsagemaker",
