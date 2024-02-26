@@ -7,10 +7,10 @@
 
 Summary: Existing base LLMs provide excellent baseline that can be trained further and can be deployed to serve specific context. This small project is to train Flan-T5 base model with custom qustion-answering and deploy to sagemaker. The project also attempts to expose the deployed model as API for adressing question answers. Some featurs of the project -
 1. Custom training has been conducted on HF FlanT5 base model 
-2. The example dataset is https://huggingface.co/datasets/bsaurav/biography
-3. The traned model has been pushed to S3 after zipping as a tarball
+2. An example `dataset <https://huggingface.co/datasets/bsaurav/biography>`__.
+3. The traned model has been pushed to S3 after zipping as a tarball.
 4. Sagemaker has been chosen for model deployment.
-5. The model has been deployed and exposed as an API
+5. The model has been deployed and exposed as an API.
 
 
 
@@ -19,7 +19,7 @@ Table of Contents
 -----------------
 1. `Training Base model <#Training-Base-model>`__
 2. `Package Model <#Package-Model>`__
-3. `Setting right IAM role <#other-features>`__
+3. `AWS Permissions <#AWS-Permissions>`__
 4. `Deployment  <#Deployment>`__
 5. `Expose As an API  <#Expose-As-an-API>`__
 6. `Next Steps <#Next-Steps>`__
@@ -28,10 +28,10 @@ Training Base model
 -------------------
 
 Flan T5 base model has been chosen as this is less than 1 GB, has showed good model performance and easy to train with custom data set. Though Flan T5 is for test summierization, this can also be used for question-answering (though it may not be best in performance).
-As per prereq, an example dataset has been created in https://huggingface.co/datasets/bsaurav/biography. the Seq2Seq trainer trains with multiple epochs, trains and stores in local folder. 
+As per prereq, an example `dataset <https://huggingface.co/datasets/bsaurav/biography>`__ has been created. the Seq2Seq trainer trains with multiple epochs, trains and stores in local folder. 
 The trained model has been pushed to HF using git-lfs.
 
-The trained model can be found https://huggingface.co/bsaurav/results.
+The trained model :  https://huggingface.co/bsaurav/results.
 
 Package Model
 ~~~~~~~~~~~~
@@ -55,9 +55,17 @@ Also as Flan T5 is encoder-decoder transformer model, hence we need to encode an
 Once the package is built (tar -cvzf test-model.tar.gz *), it has been pushed to S3 under a bucket/folder.
 
 
-Setting right IAM role
+AWS Permissions
 ~~~~~~~~~~~~~~~~~~~~~~
  In order to deploy to sagemaker, it is very important to set up the right IAM roles. In this project, we have used custom script for deployment from local machine. hence we created a new IAM user and role that will be used to upload atifact to s3, validate file sizes for correctly assessing instance size and fianlly run deployment procedured.
+
+As a managed service, Amazon SageMaker performs operations on your behalf on the AWS hardware that is managed by Amazon SageMaker.
+Amazon SageMaker can perform only operations that the user permits.
+You can read more about which permissions are necessary in the `AWS Documentation <https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html>`__.
+
+The SageMaker Python SDK should not require any additional permissions aside from what is required for using SageMaker.
+However, if you are using an IAM role with a path in it, you should grant permission for ``iam:GetRole``.
+
 
 The IAM user will have the following policies for:
 
@@ -203,7 +211,7 @@ The IAM role will have the following policies for:
 
 Deployment
 ~~~~~~~~~~~~~~~
-The deployment script, used in this project, is a customized version of Ezsmdeploy (https://github.com/aws-samples/easy-amazon-sagemaker-deployments).
+The deployment script, used in this project, is a customized version of `Ezsmdeploy <https://github.com/aws-samples/easy-amazon-sagemaker-deployments>`__.
 
 As the deployment will be AWS to AWS, hence the script need to accommodate:
  1. The s3 bucket and folder
@@ -283,17 +291,6 @@ Supported Python Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The script has been tested on Python 3.6; should run in higher versions!
-
-AWS Permissions
-~~~~~~~~~~~~~~~
-Ezsmdeploy uses the  Sagemaker python SDK.
-
-As a managed service, Amazon SageMaker performs operations on your behalf on the AWS hardware that is managed by Amazon SageMaker.
-Amazon SageMaker can perform only operations that the user permits.
-You can read more about which permissions are necessary in the `AWS Documentation <https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html>`__.
-
-The SageMaker Python SDK should not require any additional permissions aside from what is required for using SageMaker.
-However, if you are using an IAM role with a path in it, you should grant permission for ``iam:GetRole``.
 
 
 Expose As an API
