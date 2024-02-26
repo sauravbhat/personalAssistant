@@ -15,5 +15,5 @@ startDeploy.Deploy(model = 's3://xxxxxx/deploy/test-model.tar.gz',
                     huggingface_model = "true",
                     huggingface_model_task = "question-answering",
                     dependencies = ["data"],
-                    #image='419270912185.dkr.ecr.us-east-1.amazonaws.com/personalassistent-image-1',
+                    #image='.dkr.ecr.us-east-1.amazonaws.com/nnnn-image-1',
                     aws_role="arn:aws:iam::xxxxxxxxxx:role/xxxxxxxx")
