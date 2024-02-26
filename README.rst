@@ -2,72 +2,14 @@
 Ezsmdeploy - SageMaker custom deployments made easy
 ====================================================
 
-.. image:: https://img.shields.io/pypi/v/ezsmdeploy.svg
-   :target: https://pypi.python.org/pypi/ezsmdeploy
-   :alt: Latest Version
 
-.. image:: https://img.shields.io/badge/code_style-black-000000.svg
-   :target: https://github.com/python/black
-   :alt: Code style: black
-
-.. image:: https://img.shields.io/badge/License-MIT-yellow.svg
-   :target: https://opensource.org/licenses/MIT
-   :alt: License: MIT
-
-.. image:: https://img.shields.io/badge/Made%20With-Love-orange.svg
-   :target: https://pypi.python.org/pypi/ezsmdeploy
-   :alt: Made With Love
-
-.. image:: https://img.shields.io/badge/Gen-AI-8A2BE2
-   :target: https://pypi.python.org/pypi/ezsmdeploy
-   :alt: GenAI
-   
    
 
-**Ezsmdeploy** python SDK helps you easily deploy Machine learning models on SageMaker. It provides a rich set of features such as deploying models from hubs (like Huggingface or SageMaker Jumpstart), passing one or more model files (even with multi-model deployments), automatically choosing an instance based on model size or based on a budget, and load testing endpoints using an intuitive API. **Ezsmdeploy** uses the SageMaker Python SDK, which is an open source library for training and deploying machine learning models on Amazon SageMaker. This SDK however focuses on further simplifying deployment from existing models, and as such, this is for you if:
+ python SDK helps you easily deploy Machine learning models on SageMaker. It provides a rich set of features such as deploying models from hubs (like Huggingface or SageMaker Jumpstart), passing one or more model files (even with multi-model deployments), automatically choosing an instance based on model size or based on a budget, and load testing endpoints using an intuitive API. **Ezsmdeploy** uses the SageMaker Python SDK, which is an open source library for training and deploying machine learning models on Amazon SageMaker. This SDK however focuses on further simplifying deployment from existing models, and as such, this is for you if:
 
-1.  you want to quickly deploy and try out foundational language models as an API powered by SageMaker (**New in v 2.0**)
-2.  you have a serialized model (a pickle / joblib/ json/ TF saved model/ Pytorch .pth/ etc) file and you want to deploy and test your model as an API endpoint
-3. you have a model or multiple models stored as local files, in local folders, or in S3 as tar files (model.tar.gz)
-4. you don't want to create a custom docker container for deployment and/or don't want to deal with docker
-5. you want to make use of advanced features such as autoscaling, elastic inference, multi-model endpoints, model inference data capture, and locust.io based load testing, without any of the heavy lifting
-6. you want to still have control of how do perform inference by passing in a python script
-
-Note for some Sagemaker estimators, deployment from pretrained models is easy; consider the Tensorflow savedmodel format. You can very easily tar your save_model.pb and variables file and use the sagemaker.tensorflow.serving.Model to register and deploy your model. Nevertheless, if your TF model is saved as checkpoints, HDF5 file, or as Tflite file, or if you have deployments needs accross multiple types of serialized model files, this may help standardize your deployment pipeline and avoid the need for building new containers for each model.
+1. 
 
 
-
-V 2.x release notes
--------------------
-1. Added support for SageMaker Jumpstart foundational models
-2. Added support for Huggingface hub models
-3. Added OpenChatKit support for appropriate chat models
-4. Tested the following:
-    - tiiuae/falcon-40b-instruct, ml.g4dn.12xlarge
-    - tiiuae/falcon-7b-instruct, ml.g5.16xlarge
-    - WizardLM/WizardLM-7B-V1.0", ml.g5.16xlarge
-    - TheBloke/wizardLM-7B-HF, ml.g4dn.4xlarge
-    - TheBloke/dromedary-65b-lora-HF, ml.g4dn.4xlarge
-    - togethercomputer/RedPajama-INCITE-Chat-3B-v1, ml.g4dn.4xlarge
-    - openchat/openchat, ml.g5.24xlarge
-    - facebook/galactica-6.7b, ml.g5.16xlarge
-    - CalderaAI/30B-Lazarus, ml.g5.16xlarge
-    - huggyllama/llama-65b, ml.g5.16xlarge
-    - ausboss/llama-30b-supercot, ml.g4dn.4xlarge
-    - MetaIX/GPT4-X-Alpasta-30b, ml.g4dn.4xlarge
-    - Also tried several small/tiny models from huggingface on Serverless - (distilbert / dynamic-tinybert / deepset/tinyroberta-squad2 / facebook/detr-resnet-50) 
-5. Added async inference support through 
-6. Added predict and delete_endpoint functions as aliases to the returned object from Deploy so it is easier to do predictions once deployed
-7. Added new notebooks for all of the above examples
-8. Added support for DJL serving. Now all HF models that do not use the LMI container use DJL. Underlying serving stack (deepspeed / fastertransformer/ HF accelerate) are automatically selected
-9. Added support to add arbitrary docker lines to the container used. In addition to reqiurements.txt, this will help make the tool even more flexible.
-
-
-V 1.x release notes
--------------------
-1. Updated to use >v2.x of SageMaker SDK
-2. Fixed failing docker builds
-3. Tested with test notebook
 
 
 Table of Contents
