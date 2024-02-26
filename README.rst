@@ -38,16 +38,18 @@ Package Model
 
 There are two ways models can be deployed in AWS (yes, we shall use AWS), one from HF directly and another from S3. As we want to control access of the model, hence S3 is preferred ove Hugging face directly.
 Also as Flan T5 is encoder-decoder transformer model, hence we need to encode and decode request/responses instead of direct invocation. What I am referring to is an interceptor that will encode/decode for the caller. I have developed code/inference.py which will be part of the package (.tar.gz format)
+
 ::
-|
-|- code/inference.py
-|- training_args.bin
-|- spiece.model
-|- special_tokens_map.json
-|- tokenizer_config.json
-|- pytorch_model.bin
-|- generation_config.json
-|- config.json
+
+  |
+  |- code/inference.py
+  |- training_args.bin
+  |- spiece.model
+  |- special_tokens_map.json
+  |- tokenizer_config.json
+  |- pytorch_model.bin
+  |- generation_config.json
+  |- config.json
 
 Once the package is built (tar -cvzf test-model.tar.gz *), it has been pushed to S3 under a bucket/folder.
 
