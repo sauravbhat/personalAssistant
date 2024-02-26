@@ -156,23 +156,23 @@ The IAM role will have the following policies for:
  ::
    
    {
-      "Version": "2012-10-17",
-      "Statement": [
-          {
-              "Sid": "Statement1",
-              "Effect": "Allow",
-              "Action": [
-                  "s3:ListBucket",
-                  "s3:GetObject",
-                  "s3:CreateBucket",
-                  "s3:ListAllMyBuckets"
-              ],
-              "Resource": [
-                  "*"
-              ]
-          }
-      ]
-  }
+         "Version": "2012-10-17",
+         "Statement": [
+             {
+                 "Sid": "Statement1",
+                 "Effect": "Allow",
+                 "Action": [
+                     "s3:ListBucket",
+                     "s3:GetObject",
+                     "s3:CreateBucket",
+                     "s3:ListAllMyBuckets"
+                 ],
+                 "Resource": [
+                     "*"
+                 ]
+             }
+         ]
+     }
 
   Logging to cloudwatch:
   ::
