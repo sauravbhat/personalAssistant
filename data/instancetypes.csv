@@ -1,5 +1,6 @@
 ml.c4.xlarge,4,7.5,1.875
 ml.c5.2xlarge,8,16,2
+ml.m5.large,2,8,4
 ml.m5.xlarge,4,16,4
 ml.m4.xlarge,4,16,4
 ml.m5d.xlarge,4,16,4

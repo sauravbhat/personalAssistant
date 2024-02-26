@@ -68,11 +68,12 @@ class Deploy(object):
         autoscale=False,
         autoscaletarget=1000,
         serverless=False,
-        serverless_memory=4096,
+        serverless_memory=3072, # The account-level service limit 'Memory size in MB per serverless endpoint' is 3072 MBs, with current utilization of 0 MBs and a request delta of 4096 MBs. Please use AWS Service Quotas to request an increase for this quota. If AWS Service Quotas is not available, contact AWS support to request an increase for this quota.
         serverless_concurrency=10,
         wait=True,
         wait_time=300,
         bucket=None,
+        bucket_folder=None,
         prefix="",
         volume_size=None,
         session=None,
@@ -90,6 +91,7 @@ class Deploy(object):
         huggingface_model=False,
         huggingface_model_task=None,
         huggingface_model_quantize=None,
+        aws_role=None,
     ):
         self.frameworklist = [
             "tensorflow",
@@ -126,6 +128,7 @@ class Deploy(object):
         self.serverless = serverless
         self.volume_size = volume_size
         self.asynchronous = asynchronous
+        self.aws_role=aws_role
 
         if serverless:
             self.serverless_config = ServerlessInferenceConfig(
@@ -167,7 +170,7 @@ class Deploy(object):
                         self.instance_type == "local"
                     else:
                         self.gpu = False
-                        self.multimodel = True
+                        self.multimodel = True #??
 
                 else:
                     if self.instance_type.split(".")[1][0] in [
@@ -179,7 +182,7 @@ class Deploy(object):
                     else:
                         self.gpu = False
                         self.multimodel = (
-                            True  # multi model works well with local endpoints ....
+                            True  # multi model works well with local endpoints ....??
                         )
 
             else:  # throw wrong instance error
@@ -188,6 +191,7 @@ class Deploy(object):
                     list(self.costdict.keys()),
                     ", or choose local for local testing. Don't pass in any instance or pass in None if you want to automatically choose an instance type.",
                 )
+        print("gpu ={}, multimodel={},instance_type={}, ".format(self.gpu, self.multimodel,self.instance_type))
 
         # ------- Model checks --------
         if type(model) == str:
@@ -208,7 +212,7 @@ class Deploy(object):
                 list of files ([model.pkl, model2.pkl]). If you are downloading a model in the script \
                 or packaging with the container, pass in model = None"
             )
-
+        print("model ={}, multimodel={},, ".format(self.model, self.multimodel))
         # if self.huggingface_model:
         #     # if self.huggingface_model_task == None:
         #     #     print("Using None as task type")
@@ -270,6 +274,7 @@ class Deploy(object):
         else:
             self.bucket = bucket
 
+        self.bucket_folder=bucket_folder,
         self.requirements = requirements
 
         # ------- docker extras --------
@@ -312,9 +317,11 @@ class Deploy(object):
             self.autoscale = True
 
         self.wait = wait
+        print("defore deploy ")
         self.deploy()
 
     def deploy_huggingface_model(self):
+        print(" deploy_huggingface_model ")
         if self.instance_type == None and not self.serverless:
             raise ValueError("Please enter a valid instance type, not [None]")
 
@@ -331,10 +338,20 @@ class Deploy(object):
             "HF_TRUST_REMOTE_CODE": "True",
         }
 
+        # # HACK:
+        hub = {
+            "HF_TASK": self.huggingface_model_task,  # model_id from hf.co/models
+            "HF_MODEL_TRUST_REMOTE_CODE": json.dumps(True),
+            "HF_TRUST_REMOTE_CODE": "True",
+        }
+
+        print("huggingface_model_task ={}".format(self.huggingface_model_task))
         if self.huggingface_model_task is not None:
             hub[
                 "HF_TASK"
             ] = self.huggingface_model_task  # NLP task you want to use for predictions
+
+        print("hub ={}".format(hub))
 
         if (
             not self.serverless
@@ -390,17 +407,20 @@ class Deploy(object):
                     f"huggingface_model_quantize needs to be one of bitsandbytes, gptq, not {self.huggingface_model_quantize}"
                 )
 
-        aws_role = sagemaker.get_execution_role()
+        if self.aws_role is None:
+            aws_role = sagemaker.get_execution_role()
+
         endpoint_name = name = "hf-model-" + self.name
 
         # create Hugging Face Model Class
         if (
             not self.serverless and self.foundation_model and self.huggingface_model
         ):  # Basically just for large models
+            print("not self.serverless and self.foundation_model and self.huggingface_model")
             self.sagemakermodel = HuggingFaceModel(
                 image_uri=get_huggingface_llm_image_uri("huggingface", version="1.1.0"),
                 env=hub,  # configuration for loading model from Hub
-                role=aws_role,  # IAM role with permissions to create an endpoint
+                role=self.aws_role,  # IAM role with permissions to create an endpoint
                 name=endpoint_name,
                 transformers_version="4.26",  # Transformers version used
                 pytorch_version="1.13",  # PyTorch version used
@@ -408,13 +428,17 @@ class Deploy(object):
             )
         else:
             if self.serverless:
+                print(" self.serverless ")
                 self.sagemakermodel_serverless = HuggingFaceModel(
+                    model_data=self.model,
+                    entry_point='inference.py',
                     env=hub,  # configuration for loading model from Hub
-                    role=aws_role,  # iam role with permissions to create an Endpoint
+                    role=self.aws_role,  # iam role with permissions to create an Endpoint
                     transformers_version="4.26",  # transformers version used
                     pytorch_version="1.13",  # pytorch version used
                     py_version="py39",  # python version used
                 )
+
             else:
                 self.sagemakermodel = DJLModel(
                     self.model,
@@ -512,7 +536,7 @@ class Deploy(object):
         if self.instance_type == None:
             # ------ load instance types dict ---------
             #instancetypepath = pkg_resources.resource_filename(
-            #    "ezsmdeploy", "data/instancetypes.csv"
+            #    "deploy", "data/instancetypes.csv"
             #)
             instancetypepath = "data/instancetypes.csv"
             with open(instancetypepath, mode="r") as infile:
@@ -557,16 +581,20 @@ class Deploy(object):
     def choose_instance_type(self):
         # TO DO : add heuristic for auto selection of instance size
 
-        if self.prefix == "":
-            tmppath = "deploy/model-" + self.name + "/"
-        else:
-            tmppath = self.prefix + "/deploy/model-" + self.name + "/"
+        #if self.prefix == "":
+        #    tmppath = "deploy/model-" + self.name + "/"
+        #else:
+        #    tmppath = self.prefix + "/deploy/model-" + self.name + "/"
 
-        size = self.get_size(self.bucket, tmppath)
-
+        #changed to have a fixed temppath
+        #tmppath=self.bucket_folder
+        print("getting the size of the bucket")
+        print("bucket={},tmppath={}".format(self.bucket, self.bucket_folder))
+        size = self.get_size(self.bucket, self.bucket_folder)
+        print("size={}".format(size))
         self.instancetypespath = "data/instancetypes.csv"
         #pkg_resources.resource_filename(
-        #    "ezsmdeploy", "data/instancetypes.csv"
+        #    "deploy", "data/instancetypes.csv"
         #)
 
         # Assume you need at least 4 workers, each model is deployed redundantly to every vcpu.
@@ -584,7 +612,7 @@ class Deploy(object):
             memperworker = self.instancedict[instance][0]
             cost = self.instancedict[instance][1]
             costpermem = self.instancedict[instance][2]
-            #
+            print("memperworker={},cost={},costpermem={}".format(memperworker,cost,costpermem))
             if self.budget == 100:
                 # even though budget is unlimited, minimize cost
                 if memperworker > size and cost < mincost:
@@ -595,7 +623,7 @@ class Deploy(object):
                 if memperworker > size and cost <= self.budget:
                     choseninstance = instance
                     break
-
+        print("choseninstance={}".format(choseninstance))
         if choseninstance == None and self.budget != 100:
             raise ValueError(
                 "Could not find an instance that satisfies your budget of "
@@ -614,6 +642,7 @@ class Deploy(object):
         self.instance_type = choseninstance
 
         self.costperhour = self.costdict[self.instance_type]
+        print("costperhour={}".format(self.costperhour))
 
     def add_model(self, s3path, relativepath):
         self.sagemakermodel.add_model(s3path, relativepath)
@@ -631,13 +660,13 @@ class Deploy(object):
             )
 
         else:
-            role = 'arn:aws:iam::xxxx:role/xxxxxxx'
+
             #agemaker.get_execution_role()
             self.sagemakermodel = MultiDataModel(
                 name="model-" + self.name,
                 model_data_prefix="/".join(self.modelpath[0].split("/")[:-1]) + "/",
                 image_uri=self.image,
-                role=role,
+                role=self.aws_role,
                 dependencies=self.dependencies,
                 # sagemaker_session=self.session,
                 predictor_cls=sagemaker.predictor.Predictor,
@@ -649,15 +678,16 @@ class Deploy(object):
             self.ei = False
 
     def deploy_model(self):
+        print("monitor={}".format(self.monitor))
         if self.monitor:
             from sagemaker.model_monitor import DataCaptureConfig
 
             if self.prefix == "":
-                tmps3uri = "s3://{}/deploy/model-{}/datacapture".format(
+                tmps3uri = "s3://{}/monitor/model-{}/datacapture".format(
                     self.bucket, self.name
                 )
             else:
-                tmps3uri = "s3://{}/{}/deploy/model-{}/datacapture".format(
+                tmps3uri = "s3://{}/{}/monitor/model-{}/datacapture".format(
                     self.bucket, self.prefix, self.name
                 )
 
@@ -670,6 +700,8 @@ class Deploy(object):
             data_capture_config = None
 
         volume_size = self.volume_size
+
+
         if self.instance_type is not None and volume_size == None:
             # Need to override volume size in some cases
             if (
@@ -686,6 +718,7 @@ class Deploy(object):
                 volume_size = None
 
             # otherwise leave as default
+        print("volume_size={}".format(self.volume_size))
 
         if self.foundation_model and not self.huggingface_model:
             # deploy the Model. Note that we need to pass Predictor class when we deploy model through Model class,
@@ -719,6 +752,7 @@ class Deploy(object):
                     volume_size=volume_size,
                     serverless_inference_config=self.serverless_config,
                     wait=self.wait,
+
                 )
             else:
                 self.predictor = self.sagemakermodel.deploy(
@@ -758,11 +792,13 @@ class Deploy(object):
     def get_size(self, bucket, path):
         s3 = boto3.resource("s3")
         my_bucket = s3.Bucket(bucket)
+        print("my_bucket={}".format(my_bucket))
         total_size = 0.0
 
         for obj in my_bucket.objects.filter(Prefix=path):
             total_size = total_size + obj.size
 
+        print("total_size={}".format(total_size))
         return total_size / ((1024.0) ** 3)
 
     def upload_model(self):
@@ -943,7 +979,7 @@ class Deploy(object):
             )
 
         if self.deployed:
-            #path1 = pkg_resources.resource_filename("ezsmdeploy", "data/smlocust.py")
+            #path1 = pkg_resources.resource_filename("deploy", "data/smlocust.py")
             path1 = "data/smlocust.py"
             shutil.copy(path1, "src/smlocust.py")
 
@@ -1006,7 +1042,8 @@ class Deploy(object):
                     pass
 
                 # compress model files
-                self.tar_model()
+                print("commented tarball creation as it is already in s3")
+                #self.tar_model()
                 sp.hide()
                 if self.model == ["tmpmodel"]:
                     sp.write(
@@ -1019,8 +1056,8 @@ class Deploy(object):
                     )
                 sp.show()
 
-                # upload model file(s)
-                self.upload_model()
+                # upload model file(s) --  not needed if model is already uploaded
+                #self.upload_model()
 
                 # Process instance type
                 self.process_instance_type()
@@ -1068,13 +1105,13 @@ class Deploy(object):
                 # ------ Dockerfile checks -------
                 if self.dockerfilepath == None and self.multimodel == True:
                     #self.dockerfilepath = pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/Dockerfile"
+                    #    "deploy", "data/Dockerfile"
                     #)
                     self.dockerfilepath =  "data/Dockerfile"
 
                 elif self.dockerfilepath == None and self.multimodel == False:
                     #self.dockerfilepath = pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/Dockerfile_flask"
+                    #    "deploy", "data/Dockerfile_flask"
                     #)
                     self.dockerfilepath =  "data/Dockerfile_flask"
 
@@ -1090,15 +1127,15 @@ class Deploy(object):
                     # Use multi model
                     path1 = "data/model_handler.py"
                     #pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/model_handler.py"
+                    #    "deploy", "data/model_handler.py"
                     #)
                     path2 = "data/dockerd-entrypoint.py"
                     #pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/dockerd-entrypoint.py"
+                    #    "deploy", "data/dockerd-entrypoint.py"
                     #)
                     path3 = "data/build-docker.sh"
                     #pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/build-docker.sh"
+                    #    "deploy", "data/build-docker.sh"
                     #)
 
                     shutil.copy(path1, "src/model_handler.py")
@@ -1110,26 +1147,26 @@ class Deploy(object):
                 else:
                     # Use Flask stack
                     #path1 = pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/nginx.conf"
+                    #    "deploy", "data/nginx.conf"
                     #)
                     #path2 = pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/predictor.py"
+                    #    "deploy", "data/predictor.py"
                     #)
-                    #path3 = pkg_resources.resource_filename("ezsmdeploy", "data/serve")
-                    #path4 = pkg_resources.resource_filename("ezsmdeploy", "data/train")
+                    #path3 = pkg_resources.resource_filename("deploy", "data/serve")
+                    #path4 = pkg_resources.resource_filename("deploy", "data/train")
                     #path5 = pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/wsgi.py"
+                    #    "deploy", "data/wsgi.py"
                     #)
                     #path6 = pkg_resources.resource_filename(
-                    #    "ezsmdeploy", "data/build-docker.sh"
+                    #    "deploy", "data/build-docker.sh"
                     #)
 
-                    path1 = "src/nginx.conf"
-                    path2 = "src/predictor.py"
-                    path3 = "src/serve"
-                    path4 = "src/train"
-                    path5 = "src/wsgi.py"
-                    path6 = "src/build-docker.sh"
+                    path1 = "data/nginx.conf"
+                    path2 = "data/predictor.py"
+                    path3 = "data/serve"
+                    path4 = "data/train"
+                    path5 = "data/wsgi.py"
+                    path6 = "data/build-docker.sh"
 
                     shutil.copy(path1, "src/nginx.conf")
                     shutil.copy(path2, "src/predictor.py")
@@ -1170,7 +1207,8 @@ class Deploy(object):
                     sp.show()
 
                 # create sagemaker model
-                self.create_model()
+                # changed - commented create model as the model been created, trained and uploaded as a seperate process
+                #self.create_model()
             else:
                 if self.foundation_model and not self.huggingface_model:
                     self.deploy_foundation_model()
@@ -1197,6 +1235,7 @@ class Deploy(object):
             sp.show()
 
             # deploy model
+            #print("me={}".format(self))
             self.deploy_model()
             sp.hide()
             sp.write(str(datetime.datetime.now() - start) + " | deployed model")
@@ -1230,7 +1269,7 @@ class Deploy(object):
                 sp.write(
                     str(datetime.datetime.now() - start)
                     + " | model monitor data capture location is "
-                    + "s3://{}/xxxxx/model-{}/datacapture".format(
+                    + "s3://{}/personalassistsagemaker/model-{}/datacapture".format(
                         self.bucket, self.name
                     )
                 )
@@ -1333,7 +1372,7 @@ class Conversation:
 
 class OpenChatKitShell(cmd.Cmd):
     intro = (
-        "EzSMdeploy Openchatkit shell -  Type /help or /? to "
+        "deploy Openchatkit shell -  Type /help or /? to "
         "list commands. For example, type /quit to exit shell.\n"
     )
     prompt = ">>> "
