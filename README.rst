@@ -174,8 +174,8 @@ The IAM role will have the following policies for:
          ]
      }
 
-  Logging to cloudwatch:
-  ::
+ Logging to cloudwatch:
+ ::
 
    {
     "Version": "2012-10-17",
