@@ -57,7 +57,148 @@ Once the package is built (tar -cvzf test-model.tar.gz *), it has been pushed to
 
 Setting right IAM role
 ~~~~~~~~~~~~~~~~~~~~~~
+ In order to deploy to sagemaker, it is very important to set up the right IAM roles. In this project, we have used custom script for deployment from local machine. hence we created a new IAM user and role that will be used to upload atifact to s3, validate file sizes for correctly assessing instance size and fianlly run deployment procedured.
 
+The IAM user will have the following policies for:
+
+S3 interaction:
+::
+
+ {
+     "Version": "2012-10-17",
+     "Statement": [
+         {
+             "Sid": "VisualEditor0",
+             "Effect": "Allow",
+             "Action": [
+                 "s3:PutObject",
+                 "s3:PutObjectTagging",
+                 "s3:ListBucket",
+                 "s3:ListAllMyBuckets",
+                 "s3:GetObject",
+                 "s3:CreateBucket"
+             ],
+             "Resource": "*"
+         }
+     ]
+ }
+
+IAM passrole needed for sagemaker:
+::
+
+ {
+     "Version": "2012-10-17",
+     "Statement": [
+         {
+             "Sid": "VisualEditor0",
+             "Effect": "Allow",
+             "Action": [
+                 "iam:PassRole",
+                 "iam:TagRole",
+                 "iam:getRole",
+                 "iam:TagPolicy",
+                 "iam:TagUser"
+             ],
+             "Resource": "arn:aws:iam::xxxx:role/xxxxx"
+         }
+     ]
+ }
+
+Sagemaker policy for inference deployment:
+::
+
+ {
+     "Version": "2012-10-17",
+     "Statement": [
+         {
+             "Sid": "VisualEditor0",
+             "Effect": "Allow",
+             "Action": [
+                 "sagemaker:DeleteTags",
+                 "sagemaker:CreateModel",
+                 "sagemaker:CreateEndpointConfig",
+                 "sagemaker:CreateEndpoint",
+                 "sagemaker:AddTags",
+                 "sagemaker:InvokeEndpoint",
+                 "sagemaker:InvokeEndpointWithResponseStream"
+             ],
+             "Resource": [
+                 "arn:aws:sagemaker:us-east-1:xxxxx:model/*",
+                 "arn:aws:sagemaker:us-east-1:xxxxx:endpoint-config/*",
+                 "arn:aws:sagemaker:us-east-1:xxxxx:endpoint/*"
+             ]
+         }
+     ]
+ }
+
+The IAM role will have the following policies for:
+ IAM passrole:
+ ::
+  {
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Effect": "Allow",
+              "Action": "iam:PassRole",
+              "Resource": "*",
+              "Condition": {
+                  "StringEquals": {
+                      "iam:PassedToService": [
+                          "sagemaker.amazonaws.com"
+                      ]
+                  }
+              }
+          }
+      ]
+  }
+
+ S3 access:
+ ::
+   
+   {
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Sid": "Statement1",
+              "Effect": "Allow",
+              "Action": [
+                  "s3:ListBucket",
+                  "s3:GetObject",
+                  "s3:CreateBucket",
+                  "s3:ListAllMyBuckets"
+              ],
+              "Resource": [
+                  "*"
+              ]
+          }
+      ]
+  }
+
+  Logging to cloudwatch:
+  ::
+
+   {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+                    "Action": [
+                        "logs:CreateLogDelivery",
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:DeleteLogDelivery",
+                        "logs:Describe*",
+                        "logs:GetLogEvents",
+                        "logs:GetLogDelivery",
+                        "logs:ListLogDeliveries",
+                        "logs:PutLogEvents",
+                        "logs:PutResourcePolicy",
+                        "logs:UpdateLogDelivery"
+                    ],
+                    "Resource": "*",
+                    "Effect": "Allow"
+                }
+            ]
+        }
 
 
 Deployment
