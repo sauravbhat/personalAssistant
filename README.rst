@@ -1,111 +1,63 @@
 ====================================================
-Ezsmdeploy - SageMaker custom deployments made easy
+ Deploying huggung face model into sagemaker from AWS S3
 ====================================================
 
 
    
 
- python SDK helps you easily deploy Machine learning models on SageMaker. It provides a rich set of features such as deploying models from hubs (like Huggingface or SageMaker Jumpstart), passing one or more model files (even with multi-model deployments), automatically choosing an instance based on model size or based on a budget, and load testing endpoints using an intuitive API. **Ezsmdeploy** uses the SageMaker Python SDK, which is an open source library for training and deploying machine learning models on Amazon SageMaker. This SDK however focuses on further simplifying deployment from existing models, and as such, this is for you if:
-
-1. 
+Summary: Existing base LLMs provide excellent baseline that can be trained further and can be deployed to serve specific context. This small project is to train Flan-T5 base model with custom qustion-answering and deploy to sagemaker. The project also attempts to expose the deployed model as API for adressing question answers. Some featurs of the project -
+1. Custom training has been conducted on HF FlanT5 base model 
+2. The example dataset is https://huggingface.co/datasets/bsaurav/biography
+3. The traned model has been pushed to S3 after zipping as a tarball
+4. Sagemaker has been chosen for model deployment.
+5. The model has been deployed and exposed as an API
 
 
 
 
 Table of Contents
 -----------------
-1. `Installing Ezsmdeploy Python SDK <#installing-the-ezsmdeploy-python-sdk>`__
-2. `Key Features <#key-features>`__
-3. `Other Features <#other-features>`__
-4. `Model script requirements <#model-script-requirements>`__
-5. `Sample notebooks <#sample-notebooks>`__
-6. `Known gotchas <#known-gotchas>`__
+1. `Training Base model <#Training-Base-model>`__
+2. `Package Model <#Package-Model>`__
+3. `Setting right IAM role <#other-features>`__
+4. `Deployment  <#model-script-requirements>`__
+5. `Expose As an API  <#sample-notebooks>`__
+6. `Next Steps <#known-gotchas>`__
 
-Installing the Ezsmdeploy Python SDK
-------------------------------------
+Training Base model
+-------------------
 
+Flan T5 base model has been chosen as this is less than 1 GB, has showed good model performance and easy to train with custom data set. Though Flan T5 is for test summierization, this can also be used for question-answering (though it may not be best in performance).
+As per prereq, an example dataset has been created in https://huggingface.co/datasets/bsaurav/biography. the Seq2Seq trainer trains with multiple epochs, trains and stores in local folder. 
+The trained model has been pushed to HF using git-lfs.
 
-The Ezsmdeploy Python SDK is built to PyPI and has the following dependencies sagemaker>=1.55.3, cyaspin==0.16.0,  shortuuid==1.0.1 and locustio==0.14.5. Ezsmdeploy can be installed with pip as follows:
+The trained model can be found https://huggingface.co/bsaurav/results.
 
-::
-
-    pip install ezsmdeploy
-    
-Make sure you upgrade to the latest stable version of ezsmdeploy if you have been using this library in the past:
-
-::
-
-    pip install -U ezsmdeploy
-
-To install locustio for testing, do:
-
-
-::
-
-    pip install ezsmdeploy[locust]
-
-Cleanest way to install this package is within a virtualenv:
-
-
-::
-
-    python -m venv env
-    
-    source env/bin/activate
-
-    pip install ezsmdeploy[locust]
-
-
-In some cases, installs fail due to an existing package installed called "greenlet". This is not a direct dependency of ezsmdeploy but interferes with the installation. To fix this, either install in a virtualenv as seen above, or do:
-
-::
-
-    pip install ezsmdeploy[locust] --ignore-installed greenlet
-    
-    
-If you have another way to test the endpoint, or want to manage locust on your own, just do:
-
-::
-
-    pip install ezsmdeploy
-    
-   
-
-Key Features
+Package Model
 ~~~~~~~~~~~~
 
-At minimum, **ezsmdeploy** requires you to provide:
+There are two ways models can be deployed in AWS (yes, we shall use AWS), one from HF directly and another from S3. As we want to control access of the model, hence S3 is preferred ove Hugging face directly.
+Also as Flan T5 is encoder-decoder transformer model, hence we need to encode and decode request/responses instead of direct invocation. What I am referring to is an interceptor that will encode/decode for the caller. I have developed code/inference.py which will be part of the package (.tar.gz format)
 
-1. one or more model files
-2. a python script with two functions: i) *load_model(modelpath)* - loads a model from a modelpath and returns a model object and ii) *predict(model,input)* - performs inference based on a model object and input data
-3. a list of requirements or a requirements.txt file
+|
+|- code/inference.py
+|- training_args.bin
+|- spiece.model
+|- special_tokens_map.json
+|- tokenizer_config.json
+|- pytorch_model.bin
+|- generation_config.json
+|- config.json
 
-For example, you can do:
-
-::
-
-    ezonsm = ezsmdeploy.Deploy(model = 'model.pth',
-                  script = 'modelscript_pytorch.py',
-                  requirements = ['numpy','torch','joblib'])
-
-
-You can also load multiple models ...
-
-::
-
-    ezonsm = ezsmdeploy.Deploy(model = ['model1.pth','model2.pth'],
-                  script = 'modelscript_pytorch.py',
-                  requirements = ['numpy','torch','joblib'])    
-
-...  or download tar.gz models from S3
-:: 
-    
-    ezonsm = ezsmdeploy.Deploy(model = ['s3://ezsmdeploy/pytorchmnist/model.tar.gz'],
-                  script = 'modelscript_pytorch.py',
-                  requirements = 'path/to/requirements.txt')
+Once the package is built (tar -cvzf test-model.tar.gz *), it has been pushed to S3 under a bucket/folder.
 
 
-Other Features
+Setting right IAM role
+~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+Deployment
 ~~~~~~~~~~~~~~~
 
 The **Deploy** class is initialized with these parameters:
@@ -274,7 +226,7 @@ You can combine multiple flags, for example, to deploy a Huggingface FM on a ser
  ... to override default arguments. Read more about locust.io here https://docs.locust.io/en/stable/
 
 
-Model Script requirements
+Expose As an API 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Make sure your model script has a load_model() and predict() function. While you can still use sagemaker's serializers and deserializers, assume that you will get a payload in bytes, and that you have to return a prediction in bytes. What you do in between is up to you. For example, your model script may look like:
@@ -298,7 +250,7 @@ Make sure your model script has a load_model() and predict() function. While you
 Note that when using the Multi model mode, the payload comes in as a dictionary and the raw bytes sent in can be accessed using payload[0]['body']; In flask based deployments, you can just use payload as it is (comes in as bytes)
 
 
-Large Language models
+Next Steps
 ~~~~~~~~~~~~~~~~~~~~~
 
 EzSMDeploy supports deploying foundation models through Jumpstart as well as huggingface. Genreral guidance:
@@ -364,10 +316,6 @@ Simply do `serverless=True`. Make sure you size your serverless endpoint correct
                                )
 
 
-Supported Operating Systems
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Ezsmdeploy SDK has been tested on Unix/Linux.
 
 Supported Python Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -384,14 +332,6 @@ You can read more about which permissions are necessary in the `AWS Documentatio
 
 The SageMaker Python SDK should not require any additional permissions aside from what is required for using SageMaker.
 However, if you are using an IAM role with a path in it, you should grant permission for ``iam:GetRole``.
-
-Licensing
-~~~~~~~~~
-Ezsmdeploy is licensed under the MIT license and uses the SageMaker Python SDK. SageMaker Python SDK is licensed under the Apache 2.0 License. It is copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved. The license is available at: http://aws.amazon.com/apache2.0/ 
-
-Sample Notebooks
-~~~~~~~~~~~~~~~~~
-https://github.com/aws-samples/easy-amazon-sagemaker-deployments/tree/master/notebooks
 
 Known Gotchas
 ~~~~~~~~~~~~~~~~~~
@@ -450,12 +390,5 @@ Known Gotchas
 |
 
 * At the time of writing this guide, launching a multi-model server from sagemaker does not support GPUs (but the open source MMS repository has no such restrictions). Ezsmdeploy checks the number of models passed in, the instance type and other parameters to decide which stack to build for your endpoint.
-
-
-CONTRIBUTING
-------------
-
-Please submit a pull request to the packages git repo
-
 
 
