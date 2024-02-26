@@ -27,10 +27,10 @@ def load_model(modelpath):
     #return clf
 
 def main():
-    role_name = 'arn:aws:iam::419270912185:role/personaltrainersagemaker'
-    iam_client = boto3.client('iam')
-    role = iam_client.get_role(RoleName='personaltrainersagemaker')
-    print(role)
+    role_name = 'arn:aws:iam::xxxxxxx:role/xxxxxxx'
+    #iam_client = boto3.client('iam')
+    #role = iam_client.get_role(RoleName='personaltrainersagemaker')
+    #print(role)
     #sess = sagemaker.Session()
     hub = {
       #'HF_MODEL_ID':'distilbert-base-uncased-distilled-squad', # model_id from hf.co/models
@@ -39,7 +39,7 @@ def main():
     # create Hugging Face Model Class
     huggingface_model = HuggingFaceModel(
        entry_point='inference.py',
-       model_data="s3://personalassistantml/test-model.tar.gz",  # path to your trained SageMaker model
+       model_data="s3://xxxxxxx/deploy/test-model.tar.gz",  # path to your trained SageMaker model
        env=hub,
        role=role_name,                                            # IAM role with permissions to create an endpoint
        transformers_version="4.26",                           # Transformers version used
@@ -54,16 +54,16 @@ def main():
     )
     #load_model(modelpath)
     # example request: you always need to define "inputs"
-    data = {
-    "inputs": {
-    	"question": "What is your name?",
-    	"context": "My Name is Saurav Bhattacharyya."
-    	}
-    }
+    #data = {
+    #"inputs": {
+    #	"question": "What is your name?",
+    #	"context": "My Name is Saurav Bhattacharyya."
+    #	}
+    #}
 
 
     # request
-    predictor.predict("question: what is your name? answer:")
+    #predictor.predict("question: what is your name? answer:")
 
 
 main()
