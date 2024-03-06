@@ -6,7 +6,9 @@
    
 
 Summary: Existing base LLMs provide excellent baseline that can be trained further and can be deployed to serve specific context. This small project aims at using Flan-T5 base model from hugging face, train with  custom dataset,stored in hugging face, with custom qustion-answer, create and deploy the fresh trained model to sagemaker and expose as an API. Some featurs of the project -
-1. The base model chosen for fine tune training is `FlanT5 base model https://huggingface.co/google/flan-t5-base>`__.
+
+
+1. The base model chosen for fine tune training is `FlanT5 base model <https://huggingface.co/google/flan-t5-base>`__.
 2. The base model is less than a gigs size and hence trained in local machine, within jupyter notebook.
 3. The training conducted with a small example `dataset <https://huggingface.co/datasets/bsaurav/biography>`__.
 3. The training involved Seq2SeqTrainer with T5Tokenizer, T5ForConditionalGeneration as tokenizer and model respectively.
