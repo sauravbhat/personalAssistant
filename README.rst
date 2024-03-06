@@ -1,16 +1,18 @@
 ====================================================
- Deploying huggung face model into sagemaker from AWS S3
+ Deploy and Expose Custom LLM model as an API
 ====================================================
 
 
    
 
-Summary: Existing base LLMs provide excellent baseline that can be trained further and can be deployed to serve specific context. This small project is to train Flan-T5 base model with custom qustion-answering and deploy to sagemaker. The project also attempts to expose the deployed model as API for adressing question answers. Some featurs of the project -
-1. Custom training has been conducted on HF FlanT5 base model 
-2. An example `dataset <https://huggingface.co/datasets/bsaurav/biography>`__.
-3. The traned model has been pushed to S3 after zipping as a tarball.
-4. Sagemaker has been chosen for model deployment.
-5. The model has been deployed and exposed as an API.
+Summary: Existing base LLMs provide excellent baseline that can be trained further and can be deployed to serve specific context. This small project aims at using Flan-T5 base model from hugging face, train with  custom dataset,stored in hugging face, with custom qustion-answer, create and deploy the fresh trained model to sagemaker and expose as an API. Some featurs of the project -
+1. The base model chosen for fine tune training is `FlanT5 base model https://huggingface.co/google/flan-t5-base>`__.
+2. The base model is less than a gigs size and hence trained in local machine, within jupyter notebook.
+3. The training conducted with a small example `dataset <https://huggingface.co/datasets/bsaurav/biography>`__.
+3. The training involved Seq2SeqTrainer with T5Tokenizer, T5ForConditionalGeneration as tokenizer and model respectively.
+4. The fine tuned model (less than a gigs size,  num_train_epochs=6), has been pushed to both hugging face and AWS S3 (after achiving as .tar.gz file) for deployment.
+5. The model containes inference.py file that encode/decode input/output before sending it to model for prediction purpose.
+6. The model has been exposed as a lambda API.
 
 
 
