@@ -295,12 +295,57 @@ The script has been tested on Python 3.6; should run in higher versions!
 
 Expose As an API
 ~~~~~~~~~~~~~~~~
+Now that we have the model deployed in sagemaker, as serverless deployment, its time to test and expose the same as an API. A lambda will be exposed as an API.
+
+The lambda input:
+
+::
+
+{
+  "MLKey": "The key that will invoke the right deployed ML version",
+  "question": "The question about the person that will be answered by the model"
+}
 
 
+::
 
 
-Next Steps
-~~~~~~~~~~~~~~~~
+    
+    payload =  json.dumps({"inputs":"" + event["question"] + " answer:"""})
+    endpoint_name = "serv-hf-endpoint-" + event["MLKey"]
+    
+    sm_runtime = boto3.client("runtime.sagemaker")
+    response = sm_runtime.invoke_endpoint(
+        EndpointName=endpoint_name,
+        ContentType="application/json",
+        Body=payload)
+
+    response_str = response["Body"].read().decode()
+    return {
+        'answer': json.dumps(response_str)
+    }
+
+
+The lambda been wrapped around API gateway as an GET REST endpoint. The following curl request has been tested successfully - 
+
+::
+curl --location --request GET 'https://cder.execute-api.us-east-1.amazonaws.com/default/' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--data '{
+  "MLKey": "MLkey",
+  "question": "WHat is your passion?"
+}'
+
+response - 
+
+::
+
+{
+    "statusCode": 200,
+    "body": "\"\\\"maths!\\\"\""
+}
+
 
 
 
