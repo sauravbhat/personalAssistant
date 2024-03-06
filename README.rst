@@ -305,10 +305,8 @@ The lambda input:
 
 ::
 
-{
   "MLKey": "The key that will invoke the right deployed ML version",
   "question": "The question about the person that will be answered by the model"
-}
 
 
 ::
@@ -336,19 +334,17 @@ The lambda been wrapped around API gateway as an GET REST endpoint. The followin
 curl --location --request GET 'https://cder.execute-api.us-east-1.amazonaws.com/default/' \
 --header 'Accept: application/json' \
 --header 'Content-Type: application/json' \
---data '{
+--data '
   "MLKey": "MLkey",
   "question": "WHat is your passion?"
-}'
+'
 
 response - 
 
 ::
 
-{
     "statusCode": 200,
     "body": "\"\\\"maths!\\\"\""
-}
 
 
 
