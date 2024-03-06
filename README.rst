@@ -331,13 +331,11 @@ The lambda input:
 The lambda been wrapped around API gateway as an GET REST endpoint. The following curl request has been tested successfully - 
 
 ::
+
 curl --location --request GET 'https://cder.execute-api.us-east-1.amazonaws.com/default/' \
 --header 'Accept: application/json' \
 --header 'Content-Type: application/json' \
---data '
-  "MLKey": "MLkey",
-  "question": "WHat is your passion?"
-'
+--data '"MLKey": "MLkey","question": "WHat is your passion?"'
 
 response - 
 
