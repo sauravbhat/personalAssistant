@@ -11,10 +11,10 @@ Summary: Existing base LLMs provide excellent baseline that can be trained furth
 1. The base model chosen for fine tune training is `FlanT5 base model <https://huggingface.co/google/flan-t5-base>`__.
 2. The base model is less than a gigs size and hence trained in local machine, within jupyter notebook.
 3. The training conducted with a small example `dataset <https://huggingface.co/datasets/bsaurav/biography>`__.
-3. The training involved Seq2SeqTrainer with T5Tokenizer, T5ForConditionalGeneration as tokenizer and model respectively.
-4. The fine tuned model (less than a gigs size,  num_train_epochs=6), has been pushed to both hugging face and AWS S3 (after achiving as .tar.gz file) for deployment.
-5. The model containes inference.py file that encode/decode input/output before sending it to model for prediction purpose.
-6. The model has been exposed as a lambda API.
+4. The training involved Seq2SeqTrainer with T5Tokenizer, T5ForConditionalGeneration as tokenizer and model respectively.
+5. The fine tuned model (less than a gigs size,  num_train_epochs=6), has been pushed to both hugging face and AWS S3 (after achiving as .tar.gz file) for deployment.
+6. The model containes inference.py file that encode/decode input/output before sending it to model for prediction purpose.
+7. The model has been exposed as a lambda API.
 
 
 
